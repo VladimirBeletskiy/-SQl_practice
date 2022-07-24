@@ -1,0 +1,116 @@
+--4 HOMEWORK
+--3 TASK
+
+--СОЗДАННИЕ ТАБЛИЦ:
+CREATE TABLE Given_Book
+(
+ID_Reader_Card INT IDENTITY(1,1) NOT NULL,
+Reader_Card SMALLINT NOT NULL,
+Exemplar SMALLINT NOT NULL,
+Date_Given DATE NOT NULL,
+Date_GivenBack DATE NOT NULL
+PRIMARY KEY (ID_Reader_Card),
+FOREIGN KEY (Exemplar) REFERENCES Book_Exemplar
+);
+
+INSERT INTO Given_Book
+VALUES
+(12345, 771, '29-11-2017', '12-12-2017');
+
+INSERT INTO Given_Book
+VALUES
+(12000, 772, '04-09-2021', '11-09-2021');
+
+INSERT INTO Given_Book
+VALUES
+( 12000, 773, '04-09-2021', '05-09-2021');
+
+INSERT INTO Given_Book
+VALUES
+( 12000, 774, '09-09-2021', '11-09-2021');
+
+INSERT INTO Given_Book
+VALUES
+(12301, 775, '08-09-2021', '11-09-2021');
+
+INSERT INTO Given_Book
+VALUES
+(12301, 776, '01-09-2021', '12-09-2021');
+
+INSERT INTO Given_Book
+VALUES
+(12301,777, '07-09-2021', '14-09-2021' );
+
+
+CREATE TABLE Readers
+(ID_Reader_Card  INT IDENTITY(1,1) NOT NULL,
+Reader_Card SMALLINT NOT NULL,
+Secod_Name TEXT NOT NULL,
+First_Name VARCHAR(200) NOT NULL,
+Third_Name TEXT NOT NULL,
+Birthday DATE NOT NULL,
+Sex TEXT NOT NULL,
+Adress CHAR NOT NULL,
+Phone_Number VARCHAR(20),
+FOREIGN KEY (ID_Reader_Card) REFERENCES Given_Book
+);
+
+INSERT INTO Readers 
+VALUES
+(12345, 'Мичурин', 'Олег', 'Янович', '12-12-1999', 'М', 7779, 79160015022);
+
+INSERT INTO Readers 
+VALUES
+(12000, 'Копин', 'Дмитрий', 'Михайлович', '02-05-2001', 'М', 7789, 79160015023);
+
+INSERT INTO Readers 
+VALUES
+(12000, 'Копин', 'Дмитрий', 'Михайлович', '02-05-2001', 'М', 7789, 79160015023);
+
+INSERT INTO Readers 
+VALUES
+(12000, 'Копин', 'Дмитрий', 'Михайлович', '02-05-2001', 'М', 7789, 79160015023);
+
+INSERT INTO Readers 
+VALUES
+(12301, 'Новикова', 'Татьяна', 'Владимировна', '29-09-2005', 'Ж', 7889, 79160015024);
+
+INSERT INTO Readers 
+VALUES
+(12301, 'Новикова', 'Татьяна', 'Владимировна', '29-09-2005', 'Ж', 7889, 79160015024);
+
+INSERT INTO Readers 
+VALUES
+(12301, 'Новикова', 'Татьяна', 'Владимировна', '29-09-2005', 'Ж', 7889, 79160015024);
+
+--ЗАДАНИЕ:
+--Найти читателя, который за последний месяц брал больше всего книг в библиотеке. 
+--Если читателей с максимальным количество несколько - вывести только тех, у кого самый маленький --возраст.
+
+--РЕШЕНИЕ:
+-- Выборка топ1 имени по кол-во взятых книг
+
+SELECT TOP(1)First_Name 
+FROM 
+ Given_Book JOIN Readers ON Given_Book.ID_Reader_Card = Readers.ID_Reader_Card
+
+--с условием: Имя где дата рождения первая в порядка возрастания
+
+WHERE  First_Name IN 
+(
+   SELECT DISTINCT First_Name  --что бы избавиться от дублей
+FROM 
+ (
+   SELECT DISTINCT First_Name, --что бы избавиться от дублей
+          ROW_NUMBER() OVER (ORDER BY Birthday  DESC) as seqnum
+   FROM Readers
+  )t
+WHERE seqnum = 1
+)
+
+--уточняем что месяц когда книгу отдали последний 
+
+AND  MONTH(Date_Given) = MONTH(CURRENT_TIMESTAMP)
+GROUP BY First_Name
+ORDER BY COUNT(Given_Book.ID_Reader_Card) DESC
+
