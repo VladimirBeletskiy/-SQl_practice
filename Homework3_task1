@@ -1,0 +1,115 @@
+--3 HOMEWORK 
+--1 Task
+
+--СОЗДАНИЕ ТАБЛИЦ:
+
+SET DATEFORMAT ymd;
+GO
+Create table Ctr_Oper
+(
+idOper NUMERIC NOT NULL PRIMARY KEY,
+idContract NUMERIC NOT NULL,
+dOper date NOT NULL,
+Sum_RUB NUMERIC NOT NULL,
+);
+
+INSERT INTO Ctr_Oper VALUES 
+(559, 565, '31-01-04', 54262);
+
+INSERT INTO Ctr_Oper VALUES 
+(556, 565, '31-11-04', 54231);
+
+INSERT INTO Ctr_Oper VALUES 
+(557, 565, '31-11-04', 57341);
+
+INSERT INTO Ctr_Oper VALUES 
+(558, 565, '31-11-04', 58349);
+
+INSERT INTO Ctr_Oper VALUES 
+(10, 550, '31-06-06', 54700);
+
+INSERT INTO Ctr_Oper VALUES 
+(11, 550, '31-06-06', 54673);
+
+INSERT INTO Ctr_Oper VALUES 
+(12, 550, '31-06-06', 54200);
+
+INSERT INTO Ctr_Oper VALUES 
+(14, 550, '31-01-06', 54460);
+
+INSERT INTO Ctr_Oper VALUES 
+(150, 500, '31-08-07', 53300);
+
+INSERT INTO Ctr_Oper VALUES 
+(151, 500, '31-08-07', 53600);
+
+INSERT INTO Ctr_Oper VALUES 
+(153, 500, '31-04-06', 54860);
+
+
+--ЗАДАНИЕ:
+--Написать запрос, который для каждой записи таблицы выведет все исходные 
+--поля плюс долю в % суммы каждой операции от общей суммы операций по договору.
+
+--РЕШЕНИЕ:
+--Создаем таблицу X 
+--откуда берем все из Ctr_Oper и считаем каждую строку в ней в порядке idContract 
+
+WITH X AS
+  (
+     SELECT *, ROW_NUMBER() OVER(ORDER BY idContract) AS R_n  FROM Ctr_Oper
+  )
+,
+
+--Создаем таблицу SUM_OPER в ней берем из X значения Sum_RUB и узнаем один процент суммы всех операций по одному договору
+
+SUM_OPER AS
+  (
+    SELECT  SUM(Sum_RUB)/100 AS SUM_PRC   FROM X                   
+     WHERE R_n BETWEEN 1 AND 3
+    UNION ALL
+    SELECT SUM(Sum_RUB)/100 AS SUM_PRC   FROM X                  
+     WHERE R_n BETWEEN 4 AND 7
+    UNION ALL
+    SELECT  SUM(Sum_RUB)/100 AS SUM_PRC   FROM X                   
+     WHERE R_n BETWEEN 8 AND 11
+  )
+
+-- так же считаем все строки и создаем для этого отдельную таблицу SUM_READY
+
+,SUM_READY AS
+  (
+    SELECT *, ROW_NUMBER() OVER(ORDER BY SUM_PRC) AS ROW_NUM FROM SUM_OPER
+  )
+
+-- берем договора их X под строками 1,2,3 и каждый делим на строку 1 из SUM_READY 
+--что бы узнать процент каждой опериции от общей суммы операции по одному договору
+
+SELECT *,SUM(Sum_RUB)/
+  (SELECT SUM_PRC FROM SUM_READY
+WHERE ROW_NUM = 1) AS PRC
+ FROM X
+ WHERE Sum_RUB IN (SELECT Sum_RUB FROM X WHERE R_n BETWEEN 1 AND 3)
+GROUP BY idOper,idContract, dOper,Sum_RUB,R_n
+
+-- берем договора их X под строками 4,5,6,7 и каждый делим на строку 2 из SUM_READY 
+--что бы узнать процент каждой опериции от общей суммы операции по одному договору
+
+UNION
+SELECT *,SUM(Sum_RUB)/
+  (SELECT SUM_PRC FROM SUM_READY
+WHERE ROW_NUM = 2) AS PRC
+ FROM X
+ WHERE Sum_RUB IN (SELECT Sum_RUB FROM X WHERE R_n BETWEEN 4 AND 7)
+ GROUP BY idOper,idContract, dOper,Sum_RUB,R_n
+
+-- берем договора их X под строками 4,5,6,7 и каждый делим на строку 2 из SUM_READY 
+--что бы узнать процент каждой операции от общей суммы операции по одному договору
+
+UNION
+SELECT *,SUM(Sum_RUB)/
+  (SELECT SUM_PRC FROM SUM_READY
+WHERE ROW_NUM = 3) AS PRC
+ FROM X
+ WHERE Sum_RUB IN (SELECT Sum_RUB FROM X WHERE R_n BETWEEN 8 AND 11)
+ GROUP BY idOper,idContract, dOper,Sum_RUB,R_n
