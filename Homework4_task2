@@ -1,0 +1,142 @@
+--4 HOMEWORK
+--2 Task
+
+--СОЗДАНИЕ ТАБЛИЦ:
+CREATE TABLE Book
+(
+ID_Book INT IDENTITY(1,1) NOT NULL,
+Book SMALLINT NOT NULL,
+Name VARCHAR(200) NOT NULL,
+Author VARCHAR(20) NOT NULL,
+Publishing_House TEXT NOT NULL,
+Year_Publihsed DATE NOT NULL,
+City_Published VARCHAR(20) NOT NULL,
+Amount_Pages CHAR NOT NULL,
+PRIMARY KEY (ID_Book)
+); 
+
+INSERT INTO Book
+VALUES
+(1, 'Множество причин почему заполнять бд скучно', 'В.Д.Белецкий', 'Эксмо', '19-05-2016', 'Саратов' , 17);
+
+INSERT INTO Book
+VALUES
+(2, 'Почему AUTO_INCREMENT нельзя добавить во все столбцы БД', 'Джоэл Грас', 'Эксмо', '27-05-2017', 'Москва', 213);
+
+INSERT INTO Book
+VALUES
+(3, 'Шаверма или Шаурма', 'П.И.ТЕР', 'Эксмо', '01-05-2016', 'Ставрополь', 1000);
+
+INSERT INTO Book
+VALUES
+(4, 'Война и мир', 'Л.Н.Толстой', 'Махаон', '10-07-2015', 'Ростов', 123);
+
+INSERT INTO Book
+VALUES
+(4, 'Война и мир', 'Л.Н.Толстой', 'Махаон', '19-05-2015', 'Ростов', 146);
+
+INSERT INTO Book
+VALUES
+(6, 'а впрочему зачем', 'А.Н.Карпин', 'Лема', '19-12-2016', 'Саратов', 176);
+
+INSERT INTO Book
+VALUES
+(4, 'Война и мир', 'Л.Н.Толстой', 'Лема', '19-01-2017', 'Ростов', 12);
+
+CREATE TABLE Given_Book
+(
+ID_Reader_Card INT IDENTITY(1,1) NOT NULL,
+Reader_Card SMALLINT NOT NULL,
+Exemplar SMALLINT NOT NULL,
+Date_Given DATE NOT NULL,
+Date_GivenBack DATE NOT NULL
+PRIMARY KEY (ID_Reader_Card),
+FOREIGN KEY (Exemplar) REFERENCES Book_Exemplar
+);
+
+INSERT INTO Given_Book
+VALUES
+(12345, 771, '29-11-2017', '12-12-2017');
+
+INSERT INTO Given_Book
+VALUES
+(12000, 772, '04-09-2021', '11-09-2021');
+
+INSERT INTO Given_Book
+VALUES
+( 12000, 773, '04-09-2021', '05-09-2021');
+
+INSERT INTO Given_Book
+VALUES
+( 12000, 774, '09-09-2021', '11-09-2021');
+
+INSERT INTO Given_Book
+VALUES
+(12301, 775, '08-09-2021', '11-09-2021');
+
+INSERT INTO Given_Book
+VALUES
+(12301, 776, '01-09-2021', '12-09-2021');
+
+INSERT INTO Given_Book
+VALUES
+(12301,777, '07-09-2021', '14-09-2021' );
+CREATE TABLE Book_Exemplar
+(
+ID_Book INT IDENTITY(1,1) NOT NULL,
+Book SMALLINT NOT NULL,
+Exemplar SMALLINT NOT NULL
+PRIMARY KEY (Exemplar),
+FOREIGN KEY (ID_Book) REFERENCES Book 
+);
+
+INSERT INTO Book_Exemplar 
+VALUES
+(1, 771);
+
+INSERT INTO Book_Exemplar 
+VALUES
+(2, 772);
+
+INSERT INTO Book_Exemplar 
+VALUES
+(3, 773);
+
+INSERT INTO Book_Exemplar 
+VALUES
+(4, 774);
+
+INSERT INTO Book_Exemplar 
+VALUES
+(4, 775);
+
+INSERT INTO Book_Exemplar 
+VALUES
+(6, 776);
+
+INSERT INTO Book_Exemplar 
+VALUES
+(4, 777);
+
+--ЗАДАЧА:
+--Вывести количество экземпляров книг «Война и мир» Л.Н.Толстого, которые находятся в библиотеке 
+--(не на руках у читателей).
+
+--РЕШЕНИЕ:
+--Считаем колво книг
+
+SELECT COUNT(Given_Book.Exemplar)
+FROM Book 
+JOIN Book_Exemplar ON Book.ID_Book = Book_Exemplar.ID_Book
+JOIN Given_Book ON Given_Book.Exemplar = Book_Exemplar.Exemplar
+
+--где дата возращениния указана тоесть книги вернули
+
+WHERE Date_GivenBack IS NOT NULL
+
+--так же указываем название и автора
+
+AND Name ='Война и мир'
+AND Author='Л.Н.Толстой'
+
+
