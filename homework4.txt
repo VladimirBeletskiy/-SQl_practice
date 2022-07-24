@@ -1,0 +1,346 @@
+ 
+--HOMEWORK 4
+--ТАБЛИЦЫ
+
+ CREATE TABLE Book
+(
+ID_Book INT IDENTITY(1,1) NOT NULL,
+Book SMALLINT NOT NULL,
+Name VARCHAR(200) NOT NULL,
+Author VARCHAR(20) NOT NULL,
+Publishing_House TEXT NOT NULL,
+Year_Publihsed DATE NOT NULL,
+City_Published VARCHAR(20) NOT NULL,
+Amount_Pages CHAR NOT NULL,
+PRIMARY KEY (ID_Book)
+); 
+
+INSERT INTO Book
+VALUES
+(1, 'Множество причин почему заполнять бд скучно', 'В.Д.Белецкий', 'Эксмо', '19-05-2016', 'Саратов' , 17);
+
+INSERT INTO Book
+VALUES
+(2, 'Почему AUTO_INCREMENT нельзя добавить во все столбцы БД', 'Джоэл Грас', 'Эксмо', '27-05-2017', 'Москва', 213);
+
+INSERT INTO Book
+VALUES
+(3, 'Шаверма или Шаурма', 'П.И.ТЕР', 'Эксмо', '01-05-2016', 'Ставрополь', 1000);
+
+INSERT INTO Book
+VALUES
+(4, 'Война и мир', 'Л.Н.Толстой', 'Махаон', '10-07-2015', 'Ростов', 123);
+
+INSERT INTO Book
+VALUES
+(4, 'Война и мир', 'Л.Н.Толстой', 'Махаон', '19-05-2015', 'Ростов', 146);
+
+INSERT INTO Book
+VALUES
+(6, 'а впрочему зачем', 'А.Н.Карпин', 'Лема', '19-12-2016', 'Саратов', 176);
+
+INSERT INTO Book
+VALUES
+(4, 'Война и мир', 'Л.Н.Толстой', 'Лема', '19-01-2017', 'Ростов', 12);
+
+
+CREATE TABLE Book_Exemplar
+(
+ID_Book INT IDENTITY(1,1) NOT NULL,
+Book SMALLINT NOT NULL,
+Exemplar SMALLINT NOT NULL
+PRIMARY KEY (Exemplar),
+FOREIGN KEY (ID_Book) REFERENCES Book 
+);
+
+INSERT INTO Book_Exemplar 
+VALUES
+(1, 771);
+
+INSERT INTO Book_Exemplar 
+VALUES
+(2, 772);
+
+INSERT INTO Book_Exemplar 
+VALUES
+(3, 773);
+
+INSERT INTO Book_Exemplar 
+VALUES
+(4, 774);
+
+INSERT INTO Book_Exemplar 
+VALUES
+(4, 775);
+
+INSERT INTO Book_Exemplar 
+VALUES
+(6, 776);
+
+INSERT INTO Book_Exemplar 
+VALUES
+(4, 777);
+
+
+CREATE TABLE Given_Book
+(
+ID_Reader_Card INT IDENTITY(1,1) NOT NULL,
+Reader_Card SMALLINT NOT NULL,
+Exemplar SMALLINT NOT NULL,
+Date_Given DATE NOT NULL,
+Date_GivenBack DATE NOT NULL
+PRIMARY KEY (ID_Reader_Card),
+FOREIGN KEY (Exemplar) REFERENCES Book_Exemplar
+);
+
+INSERT INTO Given_Book
+VALUES
+(12345, 771, '29-11-2017', '12-12-2017');
+
+INSERT INTO Given_Book
+VALUES
+(12000, 772, '04-09-2021', '11-09-2021');
+
+INSERT INTO Given_Book
+VALUES
+( 12000, 773, '04-09-2021', '05-09-2021');
+
+INSERT INTO Given_Book
+VALUES
+( 12000, 774, '09-09-2021', '11-09-2021');
+
+INSERT INTO Given_Book
+VALUES
+(12301, 775, '08-09-2021', '11-09-2021');
+
+INSERT INTO Given_Book
+VALUES
+(12301, 776, '01-09-2021', '12-09-2021');
+
+INSERT INTO Given_Book
+VALUES
+(12301,777, '07-09-2021', '14-09-2021' );
+
+
+CREATE TABLE Readers
+(ID_Reader_Card  INT IDENTITY(1,1) NOT NULL,
+Reader_Card SMALLINT NOT NULL,
+Secod_Name TEXT NOT NULL,
+First_Name VARCHAR(200) NOT NULL,
+Third_Name TEXT NOT NULL,
+Birthday DATE NOT NULL,
+Sex TEXT NOT NULL,
+Adress CHAR NOT NULL,
+Phone_Number VARCHAR(20),
+FOREIGN KEY (ID_Reader_Card) REFERENCES Given_Book
+);
+
+INSERT INTO Readers 
+VALUES
+(12345, 'Мичурин', 'Олег', 'Янович', '12-12-1999', 'М', 7779, 79160015022);
+
+INSERT INTO Readers 
+VALUES
+(12000, 'Копин', 'Дмитрий', 'Михайлович', '02-05-2001', 'М', 7789, 79160015023);
+
+INSERT INTO Readers 
+VALUES
+(12000, 'Копин', 'Дмитрий', 'Михайлович', '02-05-2001', 'М', 7789, 79160015023);
+
+INSERT INTO Readers 
+VALUES
+(12000, 'Копин', 'Дмитрий', 'Михайлович', '02-05-2001', 'М', 7789, 79160015023);
+
+INSERT INTO Readers 
+VALUES
+(12301, 'Новикова', 'Татьяна', 'Владимировна', '29-09-2005', 'Ж', 7889, 79160015024);
+
+INSERT INTO Readers 
+VALUES
+(12301, 'Новикова', 'Татьяна', 'Владимировна', '29-09-2005', 'Ж', 7889, 79160015024);
+
+INSERT INTO Readers 
+VALUES
+(12301, 'Новикова', 'Татьяна', 'Владимировна', '29-09-2005', 'Ж', 7889, 79160015024);
+
+
+--ТАБЛИЦА ФАКТОВ
+CREATE VIEW Facts_Table AS
+
+SELECT 
+  Book.ID_Book, 
+  Book_Exemplar.Exemplar,
+  Given_Book.ID_Reader_Card
+FROM 
+  Book 
+JOIN 
+  Book_Exemplar ON Book.ID_Book = Book_Exemplar.ID_Book 
+JOIN  
+  Given_Book  ON Given_Book.Exemplar = Book_Exemplar.Exemplar
+
+--РЕШЕНИЯ
+--1 ЗАДАНИЕ 1 ЗАДАЧА
+
+--ОПИСАНИЕ : Найти города, в которых в 2016 году было издано больше всего книг
+
+SELECT 
+  City_Published --выборока ограничена не top()
+from book 
+GROUP BY 
+  City_Published
+having 
+  count(ID_Book) in  -- а макс(кол-во) книг
+( 
+      select 
+	    max(n) 
+	  FROM
+(
+select 
+  City_Published,    -- кол-во книг из доп таблицы
+  count(ID_Book)as n -- где город и кол-во книг в нем
+
+from book
+where year(Year_Publihsed) =2016
+GROUP BY City_Published
+)t                  -- в результате запрос может выдасть несколько городов
+)                   -- тк нет top()
+
+
+--1 ЗАДАНИЕ 1 ЗАДАЧА 2 ВАРИАНТ
+
+WITH T as 
+(
+select 
+  City_Published,    
+  count(Book)as n 
+from book
+where year(Year_Publihsed) =2016
+GROUP BY City_Published
+)
+
+SELECT                                                                                    --ограничиваем запрос top()
+   TOP(SELECT COUNT(City_Published)FROM T WHERE N = (SELECT MAX(N)FROM T)) City_Published --но в резутьтате может быть несколько городов 
+from t                                                                                 --тк top(кол-во городов где n = макс n)
+GROUP BY t.City_Published
+
+
+
+
+--1 ЗАДАНИЕ 2 ЗАДАЧА 
+
+--ОПИСАНИЕ :Вывести количество экземпляров книг «Война и мир» Л.Н.Толстого, которые находятся в библиотеке 
+--(не на руках у читателей).
+
+--Считаем колво книг
+SELECT COUNT(Given_Book.Exemplar)
+FROM Book 
+JOIN Book_Exemplar ON Book.ID_Book = Book_Exemplar.ID_Book
+JOIN Given_Book ON Given_Book.Exemplar = Book_Exemplar.Exemplar
+--где дата возращениния указана тоесть книги вернули
+WHERE Date_GivenBack IS NOT NULL
+--так же указываем название и автора
+AND Name ='Война и мир'
+AND Author='Л.Н.Толстой'
+
+
+--1 ЗАДАНИЕ 3 ЗАДАЧА
+
+--ОПИСАНИЕ: Найти читателя, который за последний месяц брал больше всего книг в библиотеке. 
+--Если читателей с максимальным количество несколько - вывести только тех, у кого самый маленький возраст.
+
+-- Выборка топ1 имени по кол-во взятых книг
+SELECT TOP(1)First_Name 
+FROM 
+ Given_Book JOIN Readers ON Given_Book.ID_Reader_Card = Readers.ID_Reader_Card
+--с условием: Имя где дата рождения первая в порядка возрастания
+WHERE  First_Name IN 
+(
+   SELECT DISTINCT First_Name  --что бы избавиться от дублей
+FROM 
+ (
+   SELECT DISTINCT First_Name, --что бы избавиться от дублей
+          ROW_NUMBER() OVER (ORDER BY Birthday  DESC) as seqnum
+   FROM Readers
+  )t
+WHERE seqnum = 1
+)
+--уточняем что месяц когда книгу отдали последний 
+AND  MONTH(Date_Given) = MONTH(CURRENT_TIMESTAMP)
+GROUP BY First_Name
+ORDER BY COUNT(Given_Book.ID_Reader_Card) DESC
+
+
+--2 ЗАДАНИЕ 1 ЗАДАЧА
+
+--ОПИСАНИЕ: Доработать ЛМД таким образом, 
+--чтобы можно было хранить данные о сотрудниках библиотеки, 
+--которые выдали книгу читателю.
+--ID_Book это последняя отданная книга
+
+
+CREATE TABLE Employee
+(
+ID_Book INT IDENTITY(1,1) NOT NULL,
+First_name TEXT NOT NULL,
+Second_name TEXT NOT NULL,
+Third_name TEXT NOT NULL,
+Sex TEXT NOT NULL,
+First_Day_Work date NOT NULL,
+Last_Day_Work date  NULL,
+Salary VARCHAR(10) NOT NULL,
+Salary_Status TEXT NOT NULL,
+ID_Book_Status TEXT NOT NULL
+FOREIGN KEY(ID_Book) REFERENCES Book
+);
+
+INSERT INTO Employee 
+VALUES
+('Мичурин', 'Иван', 'Николаевич', 'М','20-08-2020' , NULL,40000,'TRUE','TRUE');
+
+INSERT INTO Employee 
+VALUES
+('Некрасов', 'Николай', 'Александрович', 'М', '20-05-2017' , NULL, 15000,'TRUE','TRUE');
+
+INSERT INTO Employee 
+VALUES
+('Ингавр', 'Алексей', 'Павлович', 'М','20-08-2010' , NULL, 35000,'TRUE','TRUE');
+
+INSERT INTO Employee 
+VALUES
+('Фотькина', 'Татьяна', 'Ригоевна', 'Ж', '23-01-2019' , NULL, 35000,'TRUE','TRUE');
+
+INSERT INTO Employee 
+VALUES
+('Гавриловна', 'Анастасия', 'Олеговна', 'Ж', '20-05-2020' , NULL, 30000,'TRUE','TRUE');
+
+INSERT INTO Employee 
+VALUES
+('Некрасова', 'Надежда', 'Михайловна', 'Ж', '13-04-2018' , NULL, 34500,'TRUE','TRUE');
+
+INSERT INTO Employee 
+VALUES
+('Фатасова', 'Татьяна', 'Олеговна', 'Ж','16-12-2016','26-10-2019', 15500,'FALSE','FALSE');
+
+--==просьба сделать в таблице версионирование в соответствии с концепцией Slowly changing dimension(ТАБЛИЦА ТЕПЕРЬ СООТВЕТСВУЕТ 2 ТИПУ SDC)
+--==таблица не учитывает ситуации, когда меняются ID_Book, Work_experience, Name, Salary (ВМЕСТО Work_Expirience ДОБАВЛЕН First_Day_Work ЧТО БЫ ОТ НЕГО РАССЧИТЫВАТЬ СКОЛЬКО СОТРУДНИК РАБОТАЕТ
+-- И  Last_Day_Work ЧТО БЫ УДАЛЯТЬ ИЗ БД СОТРУДНИКОВ ЧТО УЖЕ НЕ РАБОТАЮТ ТАК ЖЕ ДОБАВИЛ Salary_Status,ID_Book_Status)
+
+
+--2 ЗАДАЧА 2 ЗАДАНИЕ
+
+-- ССЫЛКА НА ER диаграмму : https://drive.google.com/file/d/1lmM0ulxddih_rlP7UPdTRlw26gGkigBx/view?usp=sharing
+
+
+--(ДОБАВИЛ ТАБЛИЦУ ФАКТОВ)
+--(ИЗ ЗА ТАБЛИЦЫ ФАКТОВ МОДЕЛЬ СТАЛА ТИПОМ СНЕЖИНКА)
+--(ЗАМЕНИЛ INT НА TINYINT ТАК КАК INT ПРОСИТ 2 БАЙТА ЗА СИМВОЛ ВМЕСТО 1 ПО TINYINT) 
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,185 @@
+HOMEWORK 3
+ТАБЛИЦЫ
+SET DATEFORMAT ymd;
+GO
+Create table Ctr_Oper
+(
+idOper NUMERIC NOT NULL PRIMARY KEY,
+idContract NUMERIC NOT NULL,
+dOper date NOT NULL,
+Sum_RUB NUMERIC NOT NULL,
+);
+
+INSERT INTO Ctr_Oper VALUES 
+(559, 565, '31-01-04', 54262);
+
+INSERT INTO Ctr_Oper VALUES 
+(556, 565, '31-11-04', 54231);
+
+INSERT INTO Ctr_Oper VALUES 
+(557, 565, '31-11-04', 57341);
+
+INSERT INTO Ctr_Oper VALUES 
+(558, 565, '31-11-04', 58349);
+
+INSERT INTO Ctr_Oper VALUES 
+(10, 550, '31-06-06', 54700);
+
+INSERT INTO Ctr_Oper VALUES 
+(11, 550, '31-06-06', 54673);
+
+INSERT INTO Ctr_Oper VALUES 
+(12, 550, '31-06-06', 54200);
+
+INSERT INTO Ctr_Oper VALUES 
+(14, 550, '31-01-06', 54460);
+
+INSERT INTO Ctr_Oper VALUES 
+(150, 500, '31-08-07', 53300);
+
+INSERT INTO Ctr_Oper VALUES 
+(151, 500, '31-08-07', 53600);
+
+INSERT INTO Ctr_Oper VALUES 
+(153, 500, '31-04-06', 54860);
+
+
+
+
+
+1 ЗАДАЧА: Написать запрос, который для каждой записи таблицы выведет все исходные 
+поля плюс долю в % суммы каждой операции от общей суммы операций по договору.
+
+
+--Создаем таблицу X 
+--откуда берем все из Ctr_Oper и считаем каждую строку в ней в порядке idContract 
+
+WITH X AS
+  (
+     SELECT *, ROW_NUMBER() OVER(ORDER BY idContract) AS R_n  FROM Ctr_Oper
+  )
+,
+--Создаем таблицу SUM_OPER в ней берем из X значения Sum_RUB и узнаем один процент суммы всех операций по одному договору
+SUM_OPER AS
+  (
+    SELECT  SUM(Sum_RUB)/100 AS SUM_PRC   FROM X                   
+     WHERE R_n BETWEEN 1 AND 3
+    UNION ALL
+    SELECT SUM(Sum_RUB)/100 AS SUM_PRC   FROM X                  
+     WHERE R_n BETWEEN 4 AND 7
+    UNION ALL
+    SELECT  SUM(Sum_RUB)/100 AS SUM_PRC   FROM X                   
+     WHERE R_n BETWEEN 8 AND 11
+  )
+
+-- так же считаем все строки и создаем для этого отдельную таблицу SUM_READY
+,SUM_READY AS
+  (
+    SELECT *, ROW_NUMBER() OVER(ORDER BY SUM_PRC) AS ROW_NUM FROM SUM_OPER
+  )
+-- берем договора их X под строками 1,2,3 и каждый делим на строку 1 из SUM_READY 
+--что бы узнать процент каждой опериции от общей суммы операции по одному договору
+SELECT *,SUM(Sum_RUB)/
+  (SELECT SUM_PRC FROM SUM_READY
+WHERE ROW_NUM = 1) AS PRC
+ FROM X
+ WHERE Sum_RUB IN (SELECT Sum_RUB FROM X WHERE R_n BETWEEN 1 AND 3)
+GROUP BY idOper,idContract, dOper,Sum_RUB,R_n
+-- берем договора их X под строками 4,5,6,7 и каждый делим на строку 2 из SUM_READY 
+--что бы узнать процент каждой опериции от общей суммы операции по одному договору
+UNION
+SELECT *,SUM(Sum_RUB)/
+  (SELECT SUM_PRC FROM SUM_READY
+WHERE ROW_NUM = 2) AS PRC
+ FROM X
+ WHERE Sum_RUB IN (SELECT Sum_RUB FROM X WHERE R_n BETWEEN 4 AND 7)
+ GROUP BY idOper,idContract, dOper,Sum_RUB,R_n
+-- берем договора их X под строками 4,5,6,7 и каждый делим на строку 2 из SUM_READY 
+--что бы узнать процент каждой операции от общей суммы операции по одному договору
+UNION
+SELECT *,SUM(Sum_RUB)/
+  (SELECT SUM_PRC FROM SUM_READY
+WHERE ROW_NUM = 3) AS PRC
+ FROM X
+ WHERE Sum_RUB IN (SELECT Sum_RUB FROM X WHERE R_n BETWEEN 8 AND 11)
+ GROUP BY idOper,idContract, dOper,Sum_RUB,R_n
+
+2 ЗАДАЧА:Написать запрос, который выведет поля: Месяц совершения операции, число
+договоров, совершивших в указанном месяце более 2-х операций.
+
+
+--Выбираем месяца ограничиваем выборку по количеству операций
+
+SELECT 
+  MONTH(dOper) AS MONTH 
+  ,idContract,COUNT(idOper) AS COUNT_OPER FROM Ctr_Oper
+GROUP BY 
+  dOper 
+  ,idContract
+HAVING 
+  COUNT(idOper)>2
+2 ЗАДАЧА ВЕРСИЯ 2
+
+--исключаем выборку где количество операций меньше двух через EXCEPT
+
+SELECT 
+  MONTH(dOper) AS MONTH 
+  ,idContract,COUNT(idOper) AS COUNT_OPER FROM Ctr_Oper
+GROUP BY 
+  dOper 
+  ,idContract
+HAVING 
+  COUNT(idOper)>2
+EXCEPT
+SSELECT 
+  MONTH(dOper) AS MONTH 
+  ,idContract,COUNT(idOper) AS COUNT_OPER FROM Ctr_Oper
+GROUP BY 
+  dOper 
+  ,idContract
+HAVING 
+  COUNT(idOper)<2
+
+3 ЗАДАЧА :Написать запрос, который выведет поля: Месяц совершения операции, число
+договоров, совершивших в указанном месяце более 2-х операций.
+
+
+-- Выбираем топ 3 сортируя по минимальной дате
+-- топ 3 потому что в таблице всего 3 договора
+
+SELECT TOP(3) 
+  idContract 
+  ,dOper 
+  ,Sum_RUB 
+FROM Ctr_Oper
+ORDER BY 
+  dOper ASC
+
+3 ЗАДАЧА ВЕРСИЯ 2
+
+-- Более универсальное решение
+--задаем переменную равную количеству договоров в таблице 
+--берем топ n из таблицы
+
+DECLARE @N INT;
+SELECT @N = (SELECT  COUNT( DISTINCT idContract) FROM Ctr_Oper)
+
+SELECT TOP(@N) 
+  idContract 
+  ,dOper 
+  ,Sum_RUB 
+FROM Ctr_Oper
+ORDER BY 
+  dOper ASC
+
+4 ЗАДАЧА:Написать запрос, который выведет поля: Месяц совершения операции, число
+договоров, совершивших в указанном месяце более 2-х операций.
+
+--Через COALESCE скалдываем каждую строку Sum_RUB с предыдушей, первую строку задаем как 0
+
+SELECT 
+  * 
+  ,COALESCE(SUM(Sum_RUB) OVER (ORDER BY dOper
+  ROWS between UNBOUNDED PRECEDING and CURRENT ROW), 
+  0) AS total_incr
+FROM Ctr_Oper
