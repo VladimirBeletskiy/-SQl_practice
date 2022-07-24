@@ -1,0 +1,80 @@
+--4 HOMEWORK
+--4 Task
+
+--ЗАДАНИЕ:
+--Доработать ЛМД таким образом, 
+--чтобы можно было хранить данные о сотрудниках библиотеки, 
+--которые выдали книгу читателю.
+--ID_Book это последняя отданная книга
+
+--РЕШЕНИЕ:
+CREATE TABLE Employee
+(
+ID_Book INT IDENTITY(1,1) NOT NULL,
+First_name TEXT NOT NULL,
+Second_name TEXT NOT NULL,
+Third_name TEXT NOT NULL,
+Sex TEXT NOT NULL,
+First_Day_Work date NOT NULL,
+Last_Day_Work date  NULL,
+Salary VARCHAR(10) NOT NULL,
+Salary_Status TEXT NOT NULL,
+ID_Book_Status TEXT NOT NULL
+FOREIGN KEY(ID_Book) REFERENCES Book
+);
+
+INSERT INTO Employee 
+VALUES
+('Мичурин', 'Иван', 'Николаевич', 'М','20-08-2020' , NULL,40000,'TRUE','TRUE');
+
+INSERT INTO Employee 
+VALUES
+('Некрасов', 'Николай', 'Александрович', 'М', '20-05-2017' , NULL, 15000,'TRUE','TRUE');
+
+INSERT INTO Employee 
+VALUES
+('Ингавр', 'Алексей', 'Павлович', 'М','20-08-2010' , NULL, 35000,'TRUE','TRUE');
+
+INSERT INTO Employee 
+VALUES
+('Фотькина', 'Татьяна', 'Ригоевна', 'Ж', '23-01-2019' , NULL, 35000,'TRUE','TRUE');
+
+INSERT INTO Employee 
+VALUES
+('Гавриловна', 'Анастасия', 'Олеговна', 'Ж', '20-05-2020' , NULL, 30000,'TRUE','TRUE');
+
+INSERT INTO Employee 
+VALUES
+('Некрасова', 'Надежда', 'Михайловна', 'Ж', '13-04-2018' , NULL, 34500,'TRUE','TRUE');
+
+INSERT INTO Employee 
+VALUES
+('Фатасова', 'Татьяна', 'Олеговна', 'Ж','16-12-2016','26-10-2019', 15500,'FALSE','FALSE');
+
+-- Таблица сделана  в соответствии с концепцией Slowly changing dimension
+--таблица  учитывает ситуации, когда меняются ID_Book, Work_experience, Name, Salary (ВМЕСТО --Work_Expirience ДОБАВЛЕН First_Day_Work ЧТО БЫ ОТ НЕГО РАССЧИТЫВАТЬ СКОЛЬКО СОТРУДНИК РАБОТАЕТ)
+
+
+-- ССЫЛКА НА ER диаграмму: 
+-- https://drive.google.com/file/d/1lmM0ulxddih_rlP7UPdTRlw26gGkigBx/view?usp=sharing
+
+
+--ДОБАВЛЕННА ТАБЛИЦА ФАКТОВ
+--ИЗ ЗА ЧЕГО ТАБЛИЦА СТАЛА СООТВЕТСВОВАТЬ ТИПУ СНЕЖИНКА
+
+--ТАБЛИЦА ФАКТОВ
+CREATE VIEW Facts_Table AS
+
+SELECT 
+  Book.ID_Book, 
+  Book_Exemplar.Exemplar,
+  Given_Book.ID_Reader_Card
+FROM 
+  Book 
+JOIN 
+  Book_Exemplar ON Book.ID_Book = Book_Exemplar.ID_Book 
+JOIN  
+  Given_Book  ON Given_Book.Exemplar = Book_Exemplar.Exemplar
+
+
+
