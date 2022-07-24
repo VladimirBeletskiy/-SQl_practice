@@ -1,0 +1,89 @@
+--4 HOMEWORK
+--1 Task
+
+--СОЗДАНИЕ ТАБЛИЦ:
+CREATE TABLE Book
+(
+ID_Book INT IDENTITY(1,1) NOT NULL,
+Book SMALLINT NOT NULL,
+Name VARCHAR(200) NOT NULL,
+Author VARCHAR(20) NOT NULL,
+Publishing_House TEXT NOT NULL,
+Year_Publihsed DATE NOT NULL,
+City_Published VARCHAR(20) NOT NULL,
+Amount_Pages CHAR NOT NULL,
+PRIMARY KEY (ID_Book)
+); 
+
+INSERT INTO Book
+VALUES
+(1, 'Множество причин почему заполнять бд скучно', 'В.Д.Белецкий', 'Эксмо', '19-05-2016', 'Саратов' , 17);
+
+INSERT INTO Book
+VALUES
+(2, 'Почему AUTO_INCREMENT нельзя добавить во все столбцы БД', 'Джоэл Грас', 'Эксмо', '27-05-2017', 'Москва', 213);
+
+INSERT INTO Book
+VALUES
+(3, 'Шаверма или Шаурма', 'П.И.ТЕР', 'Эксмо', '01-05-2016', 'Ставрополь', 1000);
+
+INSERT INTO Book
+VALUES
+(4, 'Война и мир', 'Л.Н.Толстой', 'Махаон', '10-07-2015', 'Ростов', 123);
+
+INSERT INTO Book
+VALUES
+(4, 'Война и мир', 'Л.Н.Толстой', 'Махаон', '19-05-2015', 'Ростов', 146);
+
+INSERT INTO Book
+VALUES
+(6, 'а впрочему зачем', 'А.Н.Карпин', 'Лема', '19-12-2016', 'Саратов', 176);
+
+INSERT INTO Book
+VALUES
+(4, 'Война и мир', 'Л.Н.Толстой', 'Лема', '19-01-2017', 'Ростов', 12);
+
+
+--ЗАДАНИЕ:
+--Найти города, в которых в 2016 году было издано больше всего книг
+
+--РЕШЕНИЕ:
+SELECT 
+  City_Published --выборока ограничена не top()
+from book 
+GROUP BY 
+  City_Published
+having 
+  count(ID_Book) in  -- а макс(кол-во) книг
+( 
+      select 
+	    max(n) 
+	  FROM
+(
+select 
+  City_Published,    -- кол-во книг из доп таблицы
+  count(ID_Book)as n -- где город и кол-во книг в нем
+
+from book
+where year(Year_Publihsed) =2016
+GROUP BY City_Published
+)t                  -- в результате запрос может выдасть несколько городов
+)                   -- тк нет top()
+
+
+
+--АЛЬТЕРНАТИВНОЕ РЕШЕНИЕ:
+WITH T as 
+(
+select 
+  City_Published,    
+  count(Book)as n 
+from book
+where year(Year_Publihsed) =2016
+GROUP BY City_Published
+)
+
+SELECT                                                                                    --ограничиваем запрос top()
+   TOP(SELECT COUNT(City_Published)FROM T WHERE N = (SELECT MAX(N)FROM T)) City_Published --но в резутьтате может быть несколько городов 
+from t                                                                                 --тк top(кол-во городов где n = макс n)
+GROUP BY t.City_Published
