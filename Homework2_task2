@@ -1,0 +1,125 @@
+--2 HOMEWORK 
+--2 Task 
+--СОЗДАНИЕ ТАБЛИЦ:
+
+CREATE TABLE VSP_oper_data
+(
+  Client_id INT NOT NULL,
+  Report_date date NOT NULL,
+  VSP_Number INT NOT NULL,
+  Txn_type text NOT NULL,
+  Txn_amount INT NOT NULL
+);
+
+INSERT INTO VSP_oper_data
+VALUES
+(
+1233455, '2017-05-02', 0123, 'credit', 5000
+)
+INSERT INTO VSP_oper_data 
+VALUES
+(
+1288455, '2017-12-02', 1212, 'credit', 15000
+)
+
+INSERT INTO VSP_oper_data 
+VALUES
+(
+1288455, '2017-05-02', 1332, 'debit', 11050
+)
+
+
+INSERT INTO VSP_oper_data 
+VALUES
+(
+1333855, '2017-01-02', 4321, 'debit', 7092
+)
+
+INSERT INTO VSP_oper_data 
+VALUES
+(
+1333855, '2017-01-02', 4321, 'credit', 8992
+)
+
+--ВИД ТАБЛИЦ:
+
+Table: VSP_oper_data
+Client_id	 Report_date	   VSP_Number	Txn_type	Txn_amount
+1233455	         2017.05.02	   1234/0123	deposit	          10000
+
+--ЗАДАНИЕ:
+
+--В таблице VSP_oper_data txn_type принимает значения debit, credit
+--Задание: напишите sql запрос, который для каждого клиента выводит сумму debit, credit операций и 
+--последнее посещенное VSP по месяцам. 
+--Результат представьте в виде: 
+--Client_id	Report_date	Debit_amount	Credit_amount	Last_VSP
+
+--РЕШЕНИЕ:
+-- Через ALTER TABLE устраняем конфликт  данных int и text
+
+ALTER TABLE VSP_oper_data
+ALTER COLUMN Txn_type NVARCHAR(MAX)
+GO
+
+-- Через доп таблицу X выбираем все и Debit_amount
+
+WITH X AS
+(
+  SELECT 
+  *, 
+  COALESCE(SUM(Txn_amount) 
+    OVER ( PARTITION BY  'debit' ORDER BY Client_id,Txn_type
+    ROWS between UNBOUNDED PRECEDING and CURRENT ROW), 
+    0) AS Debit_amount FROM VSP_oper_data
+  WHERE Txn_type = 'debit'
+)
+
+-- Через доп таблицу I выбираем все и Credit_amount
+,
+I AS
+(
+  SELECT 
+  *, 
+  COALESCE(SUM(Txn_amount) 
+    OVER ( PARTITION BY  'credit' ORDER BY Client_id,Txn_type
+    ROWS between UNBOUNDED PRECEDING and CURRENT ROW), 
+    0) AS credit_amount FROM VSP_oper_data
+  WHERE Txn_type = 'credit'
+ )
+
+ --Совмещаем X и I так как взять Debit_amount и Credit_amount через  UNION не получится
+ ,
+ XI AS
+ (
+ SELECT 
+   I.Client_id, 
+   credit_amount,
+   Debit_amount 
+ FROM I JOIN X ON I.Client_id = X.Client_id 
+ )
+
+-- Выбираем все что нам нужно Ограничивая выборку VSP_Number так как нам нужны самые последние --посещения
+-- Так же для этого берем MAX(MONTH(Report_date) как последние посещения 
+
+ SELECT DISTINCT
+   VSP_oper_data.Client_id, 
+   MAX(MONTH(Report_date)) AS Report_date,
+   credit_amount,Debit_amount,
+   VSP_oper_data.VSP_Number AS Last_VSP 
+ FROM VSP_oper_data JOIN XI ON VSP_oper_data.Client_id = XI.Client_id 
+  WHERE VSP_oper_data.VSP_Number IN 
+ (SELECT 
+  VSP_Number 
+ FROM VSP_oper_data 
+  WHERE Report_date IN
+ (SELECT DISTINCT TOP 3 Report_date 
+  FROM  VSP_oper_data))
+ 
+--группируем по выборке
+
+ GROUP BY 
+   VSP_oper_data.Client_id,
+   XI.credit_amount,
+   XI.Debit_amount,
+   VSP_oper_data.VSP_Number
