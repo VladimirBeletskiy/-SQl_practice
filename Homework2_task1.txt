@@ -1,0 +1,82 @@
+--2 HOMEWORK
+--1 Task  
+--СОЗДАНИЕ ТАБЛИЦ:
+
+CREATE TABLE Transactions
+(   
+  Client_id INT NOT NULL , 
+  Report_date date NOT NULL,
+  Txn_amount INT NOT NULL
+);
+
+INSERT INTO Transactions
+VALUES
+(
+123, '2017-01-01', 50000
+)
+
+CREATE TABLE Rates
+(
+  Report_date date NOT NULL,
+  Ccy_code INT   NOT NULL,
+  Ccy_rate DECIMAL(4,2)  NOT NULL
+);
+
+INSERT INTO Rates
+VALUES
+(
+'2016-12-30', 840, '60,58'
+)
+
+INSERT INTO Rates
+VALUES
+(
+'2017-01-09', 840, '61,01'
+)
+
+
+--ВИД ТАБЛИЦ:
+
+Table: Transactions
+Client_id	Report_date	Txn_amount
+123	        2017.01.01	  50000
+
+Table: Rates
+Report_date	Ccy_code	CCy_rate
+2016.12.30	840	        60,58
+2017.01.09	840	        61,01
+
+--Задание: Напишите sql запрос, который будет переводить сумму транзакций в usd (ccy_code = 840) 
+--с учетом того, что в таблице rates данные только за рабочие дни. 
+--Транзакции, совершенные в выходные, пересчитываются по курсу последнего рабочего дня 
+--перед праздником/выходным. Результат: Клиент, дата, сумма операций в usd.
+
+
+--Решение:
+
+--Берем lient_id, Report_date, sum_usd из доп таблицы
+
+SELECT Client_id, Report_date, sum_usd
+FROM
+(
+
+-- в ней нуммеруем строки Transactions.Report_date с помощью PARTITION BY и выставляем в порядке
+--убывания 
+
+  SELECT 
+    Client_id, 
+	Transactions.Report_date,
+	Transactions.Txn_amount*Rates.Ccy_rate AS sum_usd, 
+	ROW_NUMBER() OVER (PARTITION BY Transactions.Report_date ORDER BY Rates.Report_date DESC) AS ROW_NUM
+     FROM Transactions
+
+--Присоединяем выборку к Rates и ограничиваем ее так чтобы время из Rates было меньше времени из --Transactions
+
+        JOIN Rates
+        ON Rates.Report_date <= Transactions.Report_date
+
+--Так же ограничиваем выборку по Ccy_code = 840 что бы выбрало только код для USD
+
+     WHERE Ccy_code = 840 
+) AS T
+WHERE ROW_NUM = 1
